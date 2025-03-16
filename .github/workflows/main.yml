@@ -52,6 +52,9 @@ jobs:
       - name: Check if the 'db' role is used
         run: |
           ansible-galaxy role info -p ./roles --offline db | grep 'Role: db' || echo "Role 'db' not found"
+      
+      - name: Install PostgreSQL Ansible collection
+        run: ansible-galaxy collection install community.postgresql
 
       - name: Run Ansible playbook
         run: |

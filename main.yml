@@ -7,6 +7,19 @@
       debug:
         msg: "Available host: {{ inventory_hostname }} in groups {{ group_names }}"
 
+- name: Configure Database
+  hosts: db
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: Debug database configuration
+      debug:
+        msg: "Configuring database on {{ inventory_hostname }}"
+
+    - name: Include db role
+      include_role:
+        name: db
+
 - name: Install Web Server
   hosts: server
   gather_facts: yes
@@ -29,15 +42,3 @@
       include_role:
         name: server
 
-- name: Configure Database
-  hosts: db
-  gather_facts: yes
-  become: yes
-  tasks:
-    - name: Debug database configuration
-      debug:
-        msg: "Configuring database on {{ inventory_hostname }}"
-
-    - name: Include db role
-      include_role:
-        name: db
