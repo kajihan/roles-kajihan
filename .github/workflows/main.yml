@@ -1,7 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 name: Tests
 
-# Controls when the workflow will run
 on:
   push:
     branches: [ "main" ]
@@ -9,7 +8,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,10 +16,9 @@ jobs:
       DB_NAME: lrv
       DB_USER: lrv
       DB_PASS: ${{ secrets.GITHUB_TOKEN }}
-      ANSIBLE_TMP_DIR: /home/runner/.ansible/tmp  # Добавляем переменную для временной директории Ansible
+      ANSIBLE_TMP_DIR: /home/runner/.ansible/tmp
 
     steps:
-      # Проверяем рабочую директорию и создаем необходимые папки заранее
       - name: Prepare environment
         run: |
           echo "Working directory: $GITHUB_WORKSPACE"
@@ -29,22 +26,22 @@ jobs:
           chmod 700 $ANSIBLE_TMP_DIR
           ls -ld $ANSIBLE_TMP_DIR
 
-      # Устанавливаем репозиторий
       - uses: actions/checkout@v4
 
-      # Обновляем пакеты
       - name: Update apt
         run: sudo apt update
 
-      # Устанавливаем ufw
       - name: Install ufw
         run: sudo apt install ufw -y
 
-      # Устанавливаем Ansible
+      # Устанавливаем последнюю версию Ansible без указания конкретной версии
       - name: Setup Ansible
-        run: python3 -m pip install --user ansible==9.0.0  # Указываем конкретную версию для стабильности
+        run: python3 -m pip install --user ansible
 
-      # Маскируем переменные окружения
+      # Выводим установленную версию Ansible для отладки
+      - name: Check Ansible version
+        run: ansible --version
+
       - name: Set masked outputs
         run: |
           echo "::add-mask::$DB_HOST"
@@ -52,17 +49,14 @@ jobs:
           echo "::add-mask::$DB_USER"
           echo "::add-mask::$DB_PASS"
 
-      # Проверяем наличие роли 'server'
       - name: Check if the 'server' role is used
         run: |
           ansible-galaxy role info -p ./roles --offline server | grep 'Role: server' || echo "Role 'server' not found"
 
-      # Проверяем наличие роли 'db'
       - name: Check if the 'db' role is used
         run: |
           ansible-galaxy role info -p ./roles --offline db | grep 'Role: db' || echo "Role 'db' not found"
 
-      # Создаем инвентаризацию и запускаем Ansible playbook
       - name: Run Ansible playbook
         run: |
           cat << EOF > hosts
@@ -73,13 +67,11 @@ jobs:
           EOF
           ansible-playbook -i ./hosts main.yml -e "db_host=$DB_HOST db_name=$DB_NAME db_user=$DB_USER db_pass=$DB_PASS ansible_remote_tmp=$ANSIBLE_TMP_DIR" -c local -vvv
 
-      # Тестируем приложение с Cypress
       - name: Test application
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./.github/tests
 
-      # Устанавливаем PostgreSQL клиент и проверяем базу данных
       - name: Test if application uses PostgreSQL
         run: |
           sudo apt-get install postgresql-client -y
