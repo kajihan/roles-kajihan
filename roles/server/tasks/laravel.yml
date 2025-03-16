@@ -1,40 +1,49 @@
 ---
 - name: Create temporary directory for Ansible
-  file:
+  ansible.builtin.file:
     path: /tmp/ansible
     state: directory
-    mode: '0777'
+    mode: '0755'
+  become: true
 
 - name: Set Ansible remote temporary directory
-  set_fact:
+  ansible.builtin.set_fact:
     ansible_remote_tmp: /tmp/ansible
 
 - name: Ensure the Laravel directory exists
-  become: yes
-  become_user: root
-  file:
-    path: /var/www/laravel
+  ansible.builtin.file:
+    path: "{{ laravel_app_path | default('/var/www/html') }}"
     state: directory
-    owner: www-data
-    group: www-data
     mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
 
 - name: Remove existing Laravel directory
-  become: yes
-  become_user: root
-  file:
-    path: "/var/www/html"
+  ansible.builtin.file:
+    path: "{{ laravel_app_path | default('/var/www/html') }}"
     state: absent
-    
+  become: true
+  when: laravel_force_deploy | default(false) | bool
+
 - name: Clone Laravel repository
-  become: yes
-  become_user: www-data
-  git:
-    repo: "https://github.com/Practical-DevOps/app-for-devops.git"
-    dest: "/var/www/html"
-    version: main
-    force: yes
-  notify: Restart Apache
+  ansible.builtin.git:
+    repo: "{{ laravel_repo | default('https://github.com/Practical-DevOps/app-for-devops.git') }}"
+    dest: "{{ laravel_app_path | default('/var/www/html') }}"
+    version: "{{ laravel_version | default('main') }}"
+  become: true
+  register: git_clone_result
+  failed_when: git_clone_result.rc != 0
+
+- name: Set correct permissions for Laravel directory
+  ansible.builtin.file:
+    path: "{{ laravel_app_path | default('/var/www/html') }}"
+    state: directory
+    owner: "{{ webserver_user | default('www-data') }}"
+    group: "{{ webserver_group | default('www-data') }}"
+    mode: '0755'
+    recurse: true
+  become: true
 
 - name: Install PHP dependencies with Composer
   become: yes

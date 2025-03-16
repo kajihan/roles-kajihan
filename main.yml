@@ -1,7 +1,19 @@
 ---
 - name: Install Web Server
-  hosts: server
-  become: yes
+  hosts: webservers
+  become: true
+  tasks:
+    - name: Check if sudo is available
+      ansible.builtin.command: sudo -n true
+      changed_when: false
+      failed_when: false
+      register: sudo_check
+
+    - name: Fail if sudo is not available
+      ansible.builtin.fail:
+        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_user }}. Please configure sudo access on the target server."
+      when: sudo_check.rc != 0
+
   roles:
     - server
 
