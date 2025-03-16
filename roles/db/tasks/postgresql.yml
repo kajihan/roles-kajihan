@@ -58,6 +58,11 @@
   notify: Restart postgresql
   when: ansible_connection == 'local' and find_pg_hba_result.matched > 0
 
+- name: Debug db_password
+  ansible.builtin.debug:
+    var: db_password
+  when: ansible_connection == 'local'
+
 - name: Create Ansible PostgreSQL user
   become: true
   community.postgresql.postgresql_user:
