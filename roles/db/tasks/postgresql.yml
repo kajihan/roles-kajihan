@@ -7,6 +7,8 @@
       - python3-psycopg2
     state: present
     update_cache: true
+  register: apt_install_result
+  failed_when: apt_install_result.rc != 0 and "No package matching 'postgresql'" not in apt_install_result.stderr
 
 - name: Ensure PostgreSQL is started and enabled
   become: true
@@ -20,22 +22,39 @@
   community.postgresql.postgresql_ping:
     login_user: postgres
   register: postgresql_status
-  ignore_errors: true  # Don't fail immediately if it's not up yet
+  ignore_errors: true
 
 - name: Debug PostgreSQL status
   ansible.builtin.debug:
     var: postgresql_status
 
+- name: Find pg_hba.conf
+  become: true
+  ansible.builtin.find:
+    paths: /etc/postgresql
+    patterns: pg_hba.conf
+    recurse: yes
+  register: find_pg_hba_result
+
+- name: Debug pg_hba.conf location
+  ansible.builtin.debug:
+    var: find_pg_hba_result
+
+- name: Set pg_hba_path fact
+  ansible.builtin.set_fact:
+    pg_hba_path: "{{ find_pg_hba_result.files[0].path }}"
+  when: find_pg_hba_result.matched > 0
+
 - name: Temporarily set postgres user authentication to trust (local only)
   become: true
   become_user: postgres
   ansible.builtin.lineinfile:
-    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    path: "{{ pg_hba_path }}"
     regexp: '^local\s+all\s+postgres\s+peer'
-    line: 'local   all             postgres                                  trust'
+    line: 'local all postgres trust'
     state: present
   notify: Restart postgresql
-  when: ansible_connection == 'local'
+  when: ansible_connection == 'local' and find_pg_hba_result.matched > 0
 
 - name: Create Ansible PostgreSQL user
   become: true
@@ -50,12 +69,12 @@
   become: true
   become_user: postgres
   ansible.builtin.lineinfile:
-    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    path: "{{ pg_hba_path }}"
     regexp: '^local\s+all\s+postgres\s+trust'
     line: 'local all postgres md5'
     state: present
   notify: Restart postgresql
-  when: ansible_connection == 'local'
+  when: ansible_connection == 'local' and find_pg_hba_result.matched > 0
 
 - name: Create database
   become: true
@@ -70,6 +89,6 @@
   become: true
   become_user: postgres
   ansible.builtin.lineinfile:
-    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    path: "{{ pg_hba_path }}"
     line: "host all {{ db_user }} 127.0.0.1/32 md5"
   notify: Restart postgresql
