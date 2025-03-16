@@ -1,22 +1,11 @@
 ---
-- name: Create temporary directory for Ansible
-  ansible.builtin.file:
-    path: /tmp/ansible
-    state: directory
-    mode: '0755'
-  become: true
-
-- name: Set Ansible remote temporary directory
-  ansible.builtin.set_fact:
-    ansible_remote_tmp: /tmp/ansible
-
 - name: Ensure the Laravel directory exists
   ansible.builtin.file:
     path: "{{ laravel_app_path | default('/var/www/html') }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_env.USER | default('ubuntu') }}"
-    group: "{{ ansible_env.USER | default('ubuntu') }}"
+    owner: "{{ ansible_env.USER | default('root') }}"
+    group: "{{ ansible_env.USER | default('root') }}"
   become: true
 
 - name: Remove existing Laravel directory

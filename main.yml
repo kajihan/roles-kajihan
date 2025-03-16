@@ -2,6 +2,8 @@
 - name: Debug available hosts and groups
   hosts: all
   gather_facts: true
+  vars:
+    ansible_remote_tmp: /tmp/ansible
   tasks:
     - name: Display all available hosts and groups
       ansible.builtin.debug:
@@ -12,10 +14,20 @@
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
+    ansible_remote_tmp: /tmp/ansible
   tasks:
     - name: Debug remote user
       ansible.builtin.debug:
         msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+
+    - name: Ensure Ansible temporary directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_remote_tmp }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_env.USER | default('root') }}"
+        group: "{{ ansible_env.USER | default('root') }}"
+      become: true
 
     - name: Check if sudo is available
       ansible.builtin.command: sudo -n true
@@ -43,10 +55,20 @@
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
+    ansible_remote_tmp: /tmp/ansible
   tasks:
     - name: Debug remote user
       ansible.builtin.debug:
         msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+
+    - name: Ensure Ansible temporary directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_remote_tmp }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_env.USER | default('root') }}"
+        group: "{{ ansible_env.USER | default('root') }}"
+      become: true
 
     - name: Check if sudo is available
       ansible.builtin.command: sudo -n true
