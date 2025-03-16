@@ -15,14 +15,14 @@ jobs:
       DB_NAME: lrv
       DB_USER: lrv
       DB_PASS: ${{ secrets.GITHUB_TOKEN }}
-      ANSIBLE_TEMP_DIR: /home/runner/.ansible/tmp
+      ANSIBLE_TMP_DIR: /home/runner/.ansible/tmp
 
     steps:
       - name: Prepare environment
         run: |
           mkdir -p $ANSIBLE_TMP_DIR
           chmod 700 $ANSIBLE_TMP_DIR
-          ls -ld $ANSIBLE_TEMP_DIR
+          ls -ld $ANSIBLE_TMP_DIR
 
       - uses: actions/checkout@v4
 
