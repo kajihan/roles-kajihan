@@ -1,0 +1,7 @@
+---
+postgresql_packages:
+  - postgresql
+  - postgresql-contrib
+postgresql_service: postgresql
+postgresql_user: postgres
+db_name: myapp_db

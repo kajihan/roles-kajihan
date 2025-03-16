@@ -1,14 +1,14 @@
 ---
-- name: Debug available hosts
+- name: Debug available hosts and groups
   hosts: all
   gather_facts: true
   tasks:
-    - name: Display all available hosts
+    - name: Display all available hosts and groups
       ansible.builtin.debug:
         msg: "Available host: {{ inventory_hostname }} in groups {{ group_names }}"
 
 - name: Install Web Server
-  hosts: webservers
+  hosts: server
   become: true
   tasks:
     - name: Check if sudo is available
@@ -21,12 +21,19 @@
       ansible.builtin.fail:
         msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_user }}. Please configure sudo access on the target server."
       when: sudo_check.rc != 0
-  roles:
-    - server
-  when: "'webservers' in group_names"
+
+    - name: Display message if no hosts in group
+      ansible.builtin.debug:
+        msg: "No hosts found in group 'server'. Skipping web server installation."
+      when: ansible_play_hosts | length == 0
+
+    - name: Apply server role
+      ansible.builtin.include_role:
+        name: server
+      when: ansible_play_hosts | length > 0
 
 - name: Install and configure Database Server
-  hosts: dbservers
+  hosts: db
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
@@ -41,6 +48,13 @@
       ansible.builtin.fail:
         msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_user }}. Please configure sudo access on the target server."
       when: sudo_check.rc != 0
-  roles:
-    - db
-  when: "'dbservers' in group_names"
+
+    - name: Display message if no hosts in group
+      ansible.builtin.debug:
+        msg: "No hosts found in group 'db'. Skipping database server installation."
+      when: ansible_play_hosts | length == 0
+
+    - name: Apply db role
+      ansible.builtin.include_role:
+        name: db
+      when: ansible_play_hosts | length > 0
