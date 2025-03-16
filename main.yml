@@ -10,7 +10,13 @@
 - name: Install Web Server
   hosts: server
   become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
+    - name: Debug remote user
+      ansible.builtin.debug:
+        msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+
     - name: Check if sudo is available
       ansible.builtin.command: sudo -n true
       changed_when: false
@@ -19,7 +25,7 @@
 
     - name: Fail if sudo is not available
       ansible.builtin.fail:
-        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_user }}. Please configure sudo access on the target server."
+        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_env.USER | default('unknown') }}. Please configure sudo access on the target server."
       when: sudo_check.rc != 0
 
     - name: Display message if no hosts in group
@@ -38,6 +44,10 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3
   tasks:
+    - name: Debug remote user
+      ansible.builtin.debug:
+        msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+
     - name: Check if sudo is available
       ansible.builtin.command: sudo -n true
       changed_when: false
@@ -46,7 +56,7 @@
 
     - name: Fail if sudo is not available
       ansible.builtin.fail:
-        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_user }}. Please configure sudo access on the target server."
+        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_env.USER | default('unknown') }}. Please configure sudo access on the target server."
       when: sudo_check.rc != 0
 
     - name: Display message if no hosts in group

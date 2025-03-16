@@ -15,8 +15,8 @@
     path: "{{ laravel_app_path | default('/var/www/html') }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    owner: "{{ ansible_env.USER | default('ubuntu') }}"
+    group: "{{ ansible_env.USER | default('ubuntu') }}"
   become: true
 
 - name: Remove existing Laravel directory
