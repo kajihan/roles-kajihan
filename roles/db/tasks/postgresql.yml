@@ -47,7 +47,7 @@
     pg_hba_path: "{{ find_pg_hba_result.files[0].path }}"
   when: find_pg_hba_result.matched > 0
 
-- name: Temporarily set postgres user authentication to trust (local only)
+- name: Temporarily set postgres user authentication to trust
   become: true
   become_user: postgres
   ansible.builtin.lineinfile:
@@ -58,26 +58,16 @@
   notify: Restart postgresql
   when: ansible_connection == 'local' and find_pg_hba_result.matched > 0
 
-# - name: Create Ansible PostgreSQL user
-#   become: true
-#   community.postgresql.postgresql_user:
-#     name: "{{ db_user }}"
-#     password: "{{ db_pass }}"
-#     priv: ALL
-#     state: present
-#   when: ansible_connection == 'local'
-
-- name: Create rails user, set MD5-hashed password, grant privs
+- name: Create Ansible PostgreSQL user
+  become: true
   community.postgresql.postgresql_user:
-    name: rails
-    password: md59543f1d82624df2b31672ec0f7050460
-    # password: SCRAM-SHA-256$4096:zFuajwIVdli9mK=NJkcv1Q++$JC4gWIrEHmF6sqRbEiZw5FFW45HUPrpVzNdoM72o730+;fqA4vLN3mCZGbhcbQyvNYY7anCrUTsem1eCh/4YA94=
-    role_attr_flags: CREATEDB,NOSUPERUSER
-  # When using sha256-hashed password:
-  # environment:
-  #   PGOPTIONS: "-c password_encryption=scram-sha-256"
+    name: "{{ db_user }}"
+    password: "{{ db_pass }}"
+    priv: ALL
+    state: present
+  when: ansible_connection == 'local'
 
-- name: Restore postgres user authentication to md5 (local only)
+- name: Restore postgres user authentication to md5
   become: true
   become_user: postgres
   ansible.builtin.lineinfile:
