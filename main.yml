@@ -10,6 +10,7 @@
 - name: Install Web Server
   hosts: server
   gather_facts: yes
+  become: yes
   tasks:
     - name: Debug remote user
       debug:
@@ -27,11 +28,11 @@
     - name: Include server role
       include_role:
         name: server
-      become: yes
 
 - name: Configure Database
   hosts: db
   gather_facts: yes
+  become: yes
   tasks:
     - name: Debug database configuration
       debug:
@@ -40,4 +41,3 @@
     - name: Include db role
       include_role:
         name: db
-      become: yes
