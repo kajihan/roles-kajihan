@@ -27,6 +27,7 @@
     - name: Include server role
       include_role:
         name: server
+      become: yes
 
 - name: Configure Database
   hosts: db
@@ -39,3 +40,4 @@
     - name: Include db role
       include_role:
         name: db
+      become: yes
