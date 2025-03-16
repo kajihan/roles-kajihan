@@ -1,53 +1,75 @@
 ---
-- name: Install Python pip
-  ansible.builtin.package:
-    name: python3-pip
-    state: present
+- name: Install PostgreSQL packages
   become: true
-
-- name: Install psycopg2 Python library
-  ansible.builtin.pip:
-    name: psycopg2-binary
-    state: present
-    executable: pip3
-  become: true
-  
-- name: Install PostgreSQL
-  apt:
+  ansible.builtin.apt:
     name:
       - postgresql
-      - postgresql-contrib
+      - python3-psycopg2
     state: present
-    update_cache: yes
+    update_cache: true
 
-- name: Start PostgreSQL service
-  service:
+- name: Ensure PostgreSQL is started and enabled
+  become: true
+  ansible.builtin.service:
     name: postgresql
     state: started
-    enabled: yes
+    enabled: true
+
+- name: Check PostgreSQL connection
+  become: true
+  community.postgresql.postgresql_ping:
+    login_user: postgres
+  register: postgresql_status
+  ignore_errors: true
+
+- name: Debug PostgreSQL status
+  ansible.builtin.debug:
+    var: postgresql_status
+
+- name: Temporarily set postgres user authentication to trust (local only)
+  become: true
+  become_user: postgres
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    regexp: '^local\s+all\s+postgres\s+peer'
+    line: 'local all postgres trust'
+    state: present
+  notify: Restart postgresql
+  when: ansible_connection == 'local'
+
+- name: Create Ansible PostgreSQL user
+  become: true
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: ALL
+    state: present
+  when: ansible_connection == 'local'
+
+- name: Restore postgres user authentication to md5 (local only)
+  become: true
+  become_user: postgres
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    regexp: '^local\s+all\s+postgres\s+trust'
+    line: 'local all postgres md5'
+    state: present
+  notify: Restart postgresql
+  when: ansible_connection == 'local'
 
 - name: Create database
-  postgresql_db:
+  become: true
+  community.postgresql.postgresql_db:
     name: "{{ db_name }}"
+    login_user: "{{ db_user }}"
+    login_password: "{{ db_password }}"
     state: present
+  when: ansible_connection == 'local'
 
-- name: Create database user
-  postgresql_user:
-    db: "{{ db_name }}"
-    name: "{{ db_user }}"
-    password: "{{ db_pass }}"
-    priv: "ALL"
-    state: present
-
-- name: Allow remote connections in `pg_hba.conf`
-  lineinfile:
-    path: /etc/postgresql/14/main/pg_hba.conf
-    line: "host all all 0.0.0.0/0 md5"
-  notify: Restart PostgreSQL
-
-- name: Set PostgreSQL to listen on all addresses
-  lineinfile:
-    path: /etc/postgresql/14/main/postgresql.conf
-    regexp: "^#?listen_addresses ="
-    line: "listen_addresses = '*'"
-  notify: Restart PostgreSQL
+- name: Add host-based access for db_user
+  become: true
+  become_user: postgres
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+    line: "host all {{ db_user }} 127.0.0.1/32  md5"
+  notify: Restart postgresql
