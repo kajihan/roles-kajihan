@@ -20,6 +20,7 @@
     repo: "{{ laravel_repo | default('https://github.com/Practical-DevOps/app-for-devops.git') }}"
     dest: "{{ laravel_app_path | default('/var/www/html') }}"
     version: "{{ laravel_version | default('main') }}"
+    force: yes
   become: true
   register: git_clone_result
   failed_when: git_clone_result.rc != 0
