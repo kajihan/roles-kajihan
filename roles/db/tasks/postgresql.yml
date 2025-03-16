@@ -1,4 +1,17 @@
 ---
+- name: Install Python pip
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+  become: true
+
+- name: Install psycopg2 Python library
+  ansible.builtin.pip:
+    name: psycopg2-binary
+    state: present
+    executable: pip3
+  become: true
+  
 - name: Install PostgreSQL
   apt:
     name:
