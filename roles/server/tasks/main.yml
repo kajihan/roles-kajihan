@@ -1,0 +1,6 @@
+---
+- name: Install Apache, PHP, and dependencies
+  ansible.builtin.include_tasks: apache.yml
+
+- name: Deploy Laravel application
+  ansible.builtin.include_tasks: laravel.yml

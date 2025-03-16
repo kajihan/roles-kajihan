@@ -1,0 +1,41 @@
+---
+- name: Install Apache, PHP, and dependencies
+  apt:
+    name:
+      - apache2
+      - php
+      - php-cli
+      - php-mbstring
+      - php-xml
+      - php-bcmath
+      - php-tokenizer
+      - php-pgsql
+      - unzip
+      - curl
+      - composer
+      - git
+    state: present
+    update_cache: yes
+
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+    update_cache: yes
+
+- name: Configure Apache virtual host
+  template:
+    src: "000-default.conf.j2"
+    dest: "/etc/apache2/sites-available/000-default.conf"
+  notify: Restart Apache
+
+- name: Enable mod_rewrite
+  command: a2enmod rewrite
+  notify: Restart Apache
+
+- name: Restart Apache
+  service:
+    name: apache2
+    state: restarted

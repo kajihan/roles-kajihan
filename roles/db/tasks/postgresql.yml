@@ -1,0 +1,40 @@
+---
+- name: Install PostgreSQL
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+    state: present
+    update_cache: yes
+
+- name: Start PostgreSQL service
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Create database
+  postgresql_db:
+    name: "{{ db_name }}"
+    state: present
+
+- name: Create database user
+  postgresql_user:
+    db: "{{ db_name }}"
+    name: "{{ db_user }}"
+    password: "{{ db_pass }}"
+    priv: "ALL"
+    state: present
+
+- name: Allow remote connections in `pg_hba.conf`
+  lineinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    line: "host all all 0.0.0.0/0 md5"
+  notify: Restart PostgreSQL
+
+- name: Set PostgreSQL to listen on all addresses
+  lineinfile:
+    path: /etc/postgresql/14/main/postgresql.conf
+    regexp: "^#?listen_addresses ="
+    line: "listen_addresses = '*'"
+  notify: Restart PostgreSQL

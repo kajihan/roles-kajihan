@@ -1,0 +1,12 @@
+---
+- name: Install Web Server
+  hosts: server
+  become: yes
+  roles:
+    - server
+
+- name: Install and configure Database Server
+  hosts: db
+  become: yes
+  roles:
+    - db
