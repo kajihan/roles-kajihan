@@ -1,69 +1,91 @@
 ---
-- name: Ensure the Laravel directory exists
+- name: Ensure temporary clone directory exists
   ansible.builtin.file:
-    path: "{{ laravel_app_path | default('/var/www/html') }}"
+    path: "/tmp/laravel_clone"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_env.USER | default('root') }}"
-    group: "{{ ansible_env.USER | default('root') }}"
   become: true
 
-- name: Remove existing Laravel directory
-  ansible.builtin.file:
-    path: "{{ laravel_app_path | default('/var/www/html') }}"
-    state: absent
-  become: true
-  when: laravel_force_deploy | default(false) | bool
-
-- name: Clone Laravel repository
+- name: Clone Laravel repository to temporary directory
   ansible.builtin.git:
-    repo: "{{ laravel_repo | default('https://github.com/Practical-DevOps/app-for-devops.git') }}"
-    dest: "{{ laravel_app_path | default('/var/www/html') }}"
-    version: "{{ laravel_version | default('main') }}"
-    force: yes
+    repo: "https://github.com/Practical-DevOps/app-for-devops.git"
+    dest: "/tmp/laravel_clone"
+    version: "main"
   become: true
   register: git_clone_result
   failed_when: git_clone_result.rc != 0
 
+- name: Remove existing Laravel directory
+  ansible.builtin.file:
+    path: "/var/www/html"
+    state: absent
+  become: true
+
+- name: Move cloned files to Laravel directory
+  ansible.builtin.copy:
+    src: "/tmp/laravel_clone/"
+    dest: "/var/www/html"
+    remote_src: yes
+    directory_mode: '0755'
+    owner: "www-data"
+    group: "www-data"
+  become: true
+
+- name: Remove temporary clone directory
+  ansible.builtin.file:
+    path: "/tmp/laravel_clone"
+    state: absent
+  become: true
+
 - name: Set correct permissions for Laravel directory
   ansible.builtin.file:
-    path: "{{ laravel_app_path | default('/var/www/html') }}"
+    path: "/var/www/html"
     state: directory
-    owner: "{{ webserver_user | default('www-data') }}"
-    group: "{{ webserver_group | default('www-data') }}"
+    owner: "www-data"
+    group: "www-data"
     mode: '0755'
     recurse: true
   become: true
 
 - name: Install PHP dependencies with Composer
-  become: yes
-  become_user: www-data
-  ansible.builtin.command: composer install
+  ansible.builtin.command: composer install --no-interaction --prefer-dist
   args:
-    chdir: /var/www/laravel
+    chdir: "/var/www/html"
+  become: true
+  become_user: www-data
 
 - name: Install Node.js dependencies with npm
   command: npm install
   args:
-    chdir: /var/www/html
+    chdir: "/var/www/html"
+  become: true
 
 - name: Build frontend assets with npm
   command: npm run build
   args:
-    chdir: /var/www/html
+    chdir: "/var/www/html"
+  become: true
 
 - name: Create `.env` file
   template:
     src: ".env.j2"
     dest: "/var/www/html/.env"
+    owner: "www-data"
+    group: "www-data"
+    mode: '0644'
+  become: true
   notify: Restart Apache
 
 - name: Generate Laravel application key
   command: php artisan key:generate
   args:
-    chdir: /var/www/html
+    chdir: "/var/www/html"
+  become: true
+  become_user: www-data
 
 - name: Run Laravel database migrations
   command: php artisan migrate --force
   args:
-    chdir: /var/www/html
+    chdir: "/var/www/html"
+  become: true
+  become_user: www-data

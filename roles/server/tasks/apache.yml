@@ -16,6 +16,7 @@
       - git
     state: present
     update_cache: yes
+  become: yes
 
 - name: Install Node.js and npm
   apt:
@@ -24,18 +25,16 @@
       - npm
     state: present
     update_cache: yes
+  become: yes
 
 - name: Configure Apache virtual host
   template:
     src: "000-default.conf.j2"
     dest: "/etc/apache2/sites-available/000-default.conf"
+  become: yes
   notify: Restart Apache
 
 - name: Enable mod_rewrite
   command: a2enmod rewrite
+  become: yes
   notify: Restart Apache
-
-- name: Restart Apache
-  service:
-    name: apache2
-    state: restarted
