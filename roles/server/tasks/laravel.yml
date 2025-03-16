@@ -13,9 +13,11 @@
   notify: Restart Apache
 
 - name: Install PHP dependencies with Composer
-  composer:
-    command: install
-    working_dir: /var/www/html
+  become: yes
+  become_user: www-data
+  ansible.builtin.command: composer install
+  args:
+    chdir: /var/www/laravel
 
 - name: Install Node.js dependencies with npm
   command: npm install
