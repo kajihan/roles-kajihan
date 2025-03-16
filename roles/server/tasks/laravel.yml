@@ -10,6 +10,8 @@
     ansible_remote_tmp: /tmp/ansible
 
 - name: Ensure the Laravel directory exists
+  become: yes
+  become_user: root
   file:
     path: /var/www/laravel
     state: directory
@@ -19,7 +21,7 @@
 
 - name: Remove existing Laravel directory
   become: yes
-  become_user: www-data
+  become_user: root
   file:
     path: "/var/www/html"
     state: absent
