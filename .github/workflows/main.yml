@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p $ANSIBLE_TMP_DIR
           chmod 700 $ANSIBLE_TMP_DIR
-          ls -ld $ANSIBLE_TMP_DIR
+          ls -ld $ANSIBLE_TEMP_DIR
 
       - uses: actions/checkout@v4
 
