@@ -1,92 +1,43 @@
 ---
 - name: Debug available hosts and groups
   hosts: all
-  gather_facts: true
-  vars:
-    ansible_remote_tmp: /tmp/ansible
+  gather_facts: yes
   tasks:
     - name: Display all available hosts and groups
-      ansible.builtin.debug:
+      debug:
         msg: "Available host: {{ inventory_hostname }} in groups {{ group_names }}"
 
 - name: Install Web Server
   hosts: server
-  become: true
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
-    ansible_remote_tmp: /tmp/ansible
+  gather_facts: yes
   tasks:
     - name: Debug remote user
-      ansible.builtin.debug:
-        msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+      debug:
+        msg: "Remote user is {{ ansible_user }}"
 
     - name: Ensure Ansible temporary directory exists
-      ansible.builtin.file:
-        path: "{{ ansible_remote_tmp }}"
+      file:
+        path: "/home/runner/.ansible/tmp"
         state: directory
-        mode: '0755'
-        owner: "{{ ansible_env.USER | default('root') }}"
-        group: "{{ ansible_env.USER | default('root') }}"
-      become: true
+        mode: '0700'
+      # Убираем become: yes, оставляем права для runner
 
-    - name: Check if sudo is available
-      ansible.builtin.command: sudo -n true
-      changed_when: false
-      failed_when: false
-      register: sudo_check
+    - name: Check user identity
+      command: whoami
+      # Убираем become: yes, проверяем текущего пользователя
 
-    - name: Fail if sudo is not available
-      ansible.builtin.fail:
-        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_env.USER | default('unknown') }}. Please configure sudo access on the target server."
-      when: sudo_check.rc != 0
-
-    - name: Display message if no hosts in group
-      ansible.builtin.debug:
-        msg: "No hosts found in group 'server'. Skipping web server installation."
-      when: ansible_play_hosts | length == 0
-
-    - name: Apply server role
-      ansible.builtin.include_role:
+    - name: Include server role
+      include_role:
         name: server
-      when: ansible_play_hosts | length > 0
 
-- name: Install and configure Database Server
+- name: Configure Database
   hosts: db
-  become: true
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
-    ansible_remote_tmp: /tmp/ansible
+  gather_facts: yes
   tasks:
-    - name: Debug remote user
-      ansible.builtin.debug:
-        msg: "Remote user is {{ ansible_env.USER | default('unknown') }}"
+    - name: Debug database configuration
+      debug:
+        msg: "Configuring database on {{ inventory_hostname }}"
 
-    - name: Ensure Ansible temporary directory exists
-      ansible.builtin.file:
-        path: "{{ ansible_remote_tmp }}"
-        state: directory
-        mode: '0755'
-        owner: "{{ ansible_env.USER | default('root') }}"
-        group: "{{ ansible_env.USER | default('root') }}"
-      become: true
-
-    - name: Check if sudo is available
-      ansible.builtin.command: sudo -n true
-      changed_when: false
-      failed_when: false
-      register: sudo_check
-
-    - name: Fail if sudo is not available
-      ansible.builtin.fail:
-        msg: "This playbook requires sudo privileges, but sudo is not available for user {{ ansible_env.USER | default('unknown') }}. Please configure sudo access on the target server."
-      when: sudo_check.rc != 0
-
-    - name: Display message if no hosts in group
-      ansible.builtin.debug:
-        msg: "No hosts found in group 'db'. Skipping database server installation."
-      when: ansible_play_hosts | length == 0
-
-    - name: Apply db role
-      ansible.builtin.include_role:
+    - name: Include db role
+      include_role:
         name: db
-      when: ansible_play_hosts | length > 0
