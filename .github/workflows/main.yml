@@ -21,9 +21,9 @@ jobs:
     steps:
       - name: Prepare environment
         run: |
-          echo "Working directory: $GITHUB_WORKSPACE"
           mkdir -p $ANSIBLE_TMP_DIR
           chmod 700 $ANSIBLE_TMP_DIR
+          chown runner:runner $ANSIBLE_TMP_DIR
           ls -ld $ANSIBLE_TMP_DIR
 
       - uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
           localhost
           EOF
           ansible-playbook -i ./hosts main.yml -e "db_host=$DB_HOST db_name=$DB_NAME db_user=$DB_USER db_pass=$DB_PASS ansible_remote_tmp=$ANSIBLE_TMP_DIR" -c local -vvv
-          
+
       - name: Test application
         uses: cypress-io/github-action@v6
         with:

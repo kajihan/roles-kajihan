@@ -13,18 +13,16 @@
   tasks:
     - name: Debug remote user
       debug:
-        msg: "Remote user is {{ ansible_user }}"
+        msg: "Remote user is {{ ansible_env.USER }}"
 
     - name: Ensure Ansible temporary directory exists
       file:
         path: "/home/runner/.ansible/tmp"
         state: directory
         mode: '0700'
-      # Убираем become: yes, оставляем права для runner
 
     - name: Check user identity
       command: whoami
-      # Убираем become: yes, проверяем текущего пользователя
 
     - name: Include server role
       include_role:
