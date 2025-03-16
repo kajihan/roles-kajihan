@@ -62,8 +62,8 @@
   become: true
   community.postgresql.postgresql_user:
     name: "{{ db_user }}"
-    # password: "{{ db_pass }}"
-    # priv: ALL
+    password: "qaZ123!@#wsx"
+    priv: ALL
     state: present
   when: ansible_connection == 'local'
 
