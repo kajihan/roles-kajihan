@@ -1,10 +1,30 @@
 ---
+- name: Create temporary directory for Ansible
+  file:
+    path: /tmp/ansible
+    state: directory
+    mode: '0777'
+
+- name: Set Ansible remote temporary directory
+  set_fact:
+    ansible_remote_tmp: /tmp/ansible
+
+- name: Ensure the Laravel directory exists
+  file:
+    path: /var/www/laravel
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
 - name: Remove existing Laravel directory
   file:
     path: "/var/www/html"
     state: absent
     
 - name: Clone Laravel repository
+  become: yes
+  become_user: www-data
   git:
     repo: "https://github.com/Practical-DevOps/app-for-devops.git"
     dest: "/var/www/html"
