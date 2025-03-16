@@ -11,6 +11,11 @@
   hosts: db
   gather_facts: yes
   become: yes
+  environment:
+    DB_HOST: "{{ lookup('env', 'DB_HOST') }}"s
+    DB_NAME: "{{ lookup('env', 'DB_NAME') }}"
+    DB_USER: "{{ lookup('env', 'DB_USER') }}"
+    DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
   tasks:
     - name: Debug database configuration
       debug:
