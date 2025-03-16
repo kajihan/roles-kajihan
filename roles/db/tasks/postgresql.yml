@@ -20,7 +20,7 @@
   community.postgresql.postgresql_ping:
     login_user: postgres
   register: postgresql_status
-  ignore_errors: true
+  ignore_errors: true  # Don't fail immediately if it's not up yet
 
 - name: Debug PostgreSQL status
   ansible.builtin.debug:
@@ -32,7 +32,7 @@
   ansible.builtin.lineinfile:
     path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
     regexp: '^local\s+all\s+postgres\s+peer'
-    line: 'local all postgres trust'
+    line: 'local   all             postgres                                  trust'
     state: present
   notify: Restart postgresql
   when: ansible_connection == 'local'
@@ -71,5 +71,5 @@
   become_user: postgres
   ansible.builtin.lineinfile:
     path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
-    line: "host all {{ db_user }} 127.0.0.1/32  md5"
+    line: "host all {{ db_user }} 127.0.0.1/32 md5"
   notify: Restart postgresql
