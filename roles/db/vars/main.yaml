@@ -1,4 +1,5 @@
 ---
-db_host: localhost  # Or 127.0.0.1
+db_host: localhost
 db_name: lrv
 db_user: lrv
+postgresql_version: 14
