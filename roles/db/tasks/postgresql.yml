@@ -8,7 +8,9 @@
     state: present
     update_cache: true
   register: apt_install_result
-  failed_when: apt_install_result.rc != 0 and "No package matching 'postgresql'" not in apt_install_result.stderr
+  failed_when: >
+    apt_install_result is failed and
+    "No package matching 'postgresql'" not in apt_install_result.stderr
 
 - name: Ensure PostgreSQL is started and enabled
   become: true
